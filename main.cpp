@@ -1,10 +1,3 @@
-// ============================================================
-//  MERGED SINGLE-FILE BUILD
-//  Sources: BlockSystem.h/.cpp, DebugSystem.h/.cpp,
-//           FileMenu.h/.cpp, SpriteSystem.h, StageGUI.h,
-//           ExecutionSystem.h, CostumeEditor.h
-// ============================================================
-
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
@@ -19,25 +12,18 @@
 #include <ctime>
 #include <cstdlib>
 #include <stack>
-
-// *** اضافه کردن هدرهای ویندوز برای باز کردن پنجره انتخاب فایل ***
 #ifdef _WIN32
 #include <windows.h>
 #include <commdlg.h>
 #endif
 
-// ============================================================
-//  BLOCK SYSTEM TYPES  (BlockSystem.h)
-// ============================================================
-
-// *** جایگزین این بخش در بالای BlockSystem.h ***
 enum BlockOpCode {
     OP_UNKNOWN = 0, OP_FLAG_CLICKED, OP_MOVE_STEPS, OP_TURN_RIGHT, OP_TURN_LEFT,
     OP_GOTO_XY, OP_GOTO_MOUSE, OP_GLIDE_SEC, OP_CHANGE_X, OP_SET_X, OP_CHANGE_Y, OP_SET_Y,
     OP_SAY_SEC, OP_SAY, OP_NEXT_COSTUME, OP_SET_SIZE, OP_CHANGE_SIZE,
-    // کنترل‌ها
+
     OP_WAIT_SEC, OP_REPEAT, OP_FOREVER, OP_IF, OP_IF_ELSE, OP_WAIT_UNTIL, OP_STOP_ALL,
-    // ریاضی و منطق
+
     OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_ABS, OP_SQRT, OP_FLOOR, OP_SIN, OP_COS,
     OP_EQ, OP_LT, OP_GT, OP_AND, OP_OR, OP_NOT, OP_XOR,
     // متفرقه
@@ -56,7 +42,6 @@ enum BlockOpCode {
 
 enum BlockCategory { CAT_MOTION, CAT_LOOKS, CAT_EVENTS, CAT_CONTROL, CAT_MYBLOCKS, CAT_OPERATORS, CAT_VARIABLES, CAT_PEN };
 
-// *** آپدیت: اضافه شدن شکل‌های Reporter (بیضی) و Boolean (شش ضلعی) ***
 enum BlockShape { SHAPE_HAT, SHAPE_STACK, SHAPE_C_SHAPE, SHAPE_E_SHAPE, SHAPE_CAP, SHAPE_REPORTER, SHAPE_BOOLEAN };
 
 struct Block {
@@ -68,9 +53,9 @@ struct Block {
     SDL_Rect inputRect1 = {0,0,0,0}; SDL_Rect inputRect2 = {0,0,0,0};
 
     Block* next = nullptr;
-    Block* subStack = nullptr;   // شکم اول (If)
-    Block* subStack2 = nullptr;  // شکم دوم (Else)
-    int midYOffset = 0;          // مختصات نوار میانی برای E-Shape
+    Block* subStack = nullptr;
+    Block* subStack2 = nullptr;
+    int midYOffset = 0;
 
     Block* condition = nullptr;
     Block* arg1 = nullptr;
@@ -222,10 +207,6 @@ Block CreateBlock(int id, int x, int y, std::string text, BlockCategory cat, Blo
     return b;
 }
 
-// ============================================================
-//  DEBUG SYSTEM TYPES  (DebugSystem.h)
-// ============================================================
-
 enum LogLevel {
     LOG_INFO,
     LOG_WARNING,
@@ -262,10 +243,6 @@ struct DebugContext {
     std::string inputText = "";
 };
 
-// ============================================================
-//  FILE MENU TYPES  (FileMenu.h)
-// ============================================================
-
 struct Button {
     SDL_Rect rect;
     std::string label;
@@ -289,9 +266,6 @@ struct MenuState {
     std::vector<std::string> savedProjects; // لیست پروژه‌های پیدا شده
 };
 
-// ============================================================
-//  SPRITE SYSTEM TYPES & FUNCTIONS  (SpriteSystem.h)
-// ============================================================
 
 // تابع بومی ویندوز برای باز کردن پنجره انتخاب فایل
 inline std::string OpenFileDialog() {
@@ -361,7 +335,6 @@ struct SpriteContext {
     int currentBackdropIndex = 0;
 };
 
-// ----------------- توابع گرافیکی -----------------
 
 // تبدیل عکس کاربر به تکسچر قابل ویرایش
 SDL_Texture* LoadEditableTexture(SDL_Renderer* r, std::string filepath, int& w, int& h) {
@@ -509,7 +482,6 @@ void RenderStageContent(SDL_Renderer* r, SpriteContext* ctx, PenContext* penCtx,
             SDL_SetRenderDrawColor(r, 76, 151, 255, 100); SDL_RenderDrawRect(r, &dest);
         }
 
-        // ================= رندر حباب گفت‌وگو (Speech Bubble) =================
         // پاک کردن دیالوگ در صورت اتمام زمان
         if (s.dialogEndTime > 0 && SDL_GetTicks() > s.dialogEndTime) {
             s.currentDialog = "";
@@ -600,9 +572,6 @@ void InitSpriteSystem(SDL_Renderer* r, SpriteContext* ctx) {
     SDL_FreeSurface(surf);
 }
 
-// ============================================================
-//  COSTUME EDITOR TYPES  (CostumeEditor.h)
-// ============================================================
 
 struct PaintTool {
     SDL_Color color = {0, 0, 0, 255};
@@ -619,9 +588,6 @@ SDL_Rect GetUploadBtnRect(SDL_Rect area) {
     return {area.x + 50, area.y + 480, 200, 45};
 }
 
-// ============================================================
-//  EXECUTION SYSTEM TYPES  (ExecutionSystem.h)
-// ============================================================
 
 // ساختار هر "نخ" اجرایی مستقل (برای اجرای همزمان)
 struct ScriptThread {
@@ -629,6 +595,7 @@ struct ScriptThread {
     bool isWaiting = false;
     Uint32 waitEndTime = 0;
     std::stack<Block*> returnStack;
+    std::map<Block*, int> repeatMap; // برای Repeat: شمارش تکرار هر بلاک
 };
 
 // کانتکست اصلی حالا لیستی از نخ‌ها رو مدیریت می‌کنه
@@ -638,9 +605,6 @@ struct ExecutionContext {
     bool isPaused = false;
 };
 
-// ============================================================
-//  FORWARD DECLARATIONS
-// ============================================================
 
 void Log(DebugContext* ctx, std::string message, LogLevel level = LOG_INFO);
 void InitBlockSystem(BlockSystemContext* ctx, int w, int h);
@@ -670,11 +634,43 @@ void AddNewSprite(SDL_Renderer* r, SpriteContext* ctx);
 void DrawLabel(SDL_Renderer* r, TTF_Font* font, std::string text, int x, int y, SDL_Color color);
 void AddNewSpriteFromFile(SDL_Renderer* r, SpriteContext* ctx, std::string filepath);
 
-// ============================================================
-//  BLOCK SYSTEM FUNCTIONS  (BlockSystem.cpp)
-// ============================================================
-
 // *** هوش مصنوعی چیدمان: محاسبه قد بلاک‌ها به صورت دینامیک ***
+// محاسبه عرض یک expression block (بازگشتی)
+int CalcExprWidth(Block* b) {
+    if (!b) return 28; // عرض slot خالی
+    if (b->shape == SHAPE_REPORTER || b->shape == SHAPE_BOOLEAN) {
+        // بر اساس محتوا حساب میکنیم
+        int w = 16; // padding
+        // طول متن (تقریبی - 8px per char)
+        std::string txt = b->text;
+        size_t p1 = txt.find("%1"), p2 = txt.find("%2");
+        std::string label = (p1 != std::string::npos) ? txt.substr(0, p1) : txt;
+        w += (int)label.size() * 8;
+        if (b->opCode == OP_AND || b->opCode == OP_OR) {
+            w += CalcExprWidth(b->arg1) + 8;
+            // label وسطی ("and"/"or")
+            w += (b->opCode==OP_AND ? 32 : 24);
+            w += CalcExprWidth(b->arg2) + 8;
+        } else if (b->opCode == OP_NOT) {
+            w += 32 + CalcExprWidth(b->arg1) + 8;
+        } else if (p1 != std::string::npos) {
+            w += CalcExprWidth(b->arg1) + 6;
+            if (p2 != std::string::npos) {
+                std::string mid = txt.substr(p1+2, p2-(p1+2));
+                w += (int)mid.size() * 8 + CalcExprWidth(b->arg2) + 6;
+                w += (int)txt.substr(p2+2).size() * 8;
+            }
+        }
+        // minimum
+        if (b->opCode==OP_AND||b->opCode==OP_OR) w = std::max(w, 110);
+        else if (b->opCode==OP_NOT) w = std::max(w, 70);
+        else if (b->shape==SHAPE_BOOLEAN) w = std::max(w, 70);
+        else w = std::max(w, 50);
+        return w;
+    }
+    return b->rect.w;
+}
+
 int LayoutBlockChain(Block* b, int x, int y) {
     if (!b) return 0;
     int currentY = y;
@@ -684,47 +680,112 @@ int LayoutBlockChain(Block* b, int x, int y) {
         curr->rect.x = x;
         curr->rect.y = currentY;
 
-        // *** راز تمیزی کار: کشسانی شدن عرض بلاک‌ها (Width) ***
-        int w = 160;
-        if (curr->shape == SHAPE_REPORTER || curr->shape == SHAPE_BOOLEAN) w = 60; // عملگرها کوچیکترن
+        bool isExpr = (curr->shape==SHAPE_REPORTER||curr->shape==SHAPE_BOOLEAN);
+        int h = isExpr ? 32 : 46;
+        int PAD = 10; // padding داخلی
 
-        // اگر بلاکی داخل ورودی‌ها افتاده بود، به عرض بلاک فعلی اضافه کن
-        if (curr->arg1) w += curr->arg1->rect.w + 10;
-        if (curr->arg2) w += curr->arg2->rect.w + 10;
-        curr->rect.w = w;
+        if (isExpr) {
+            // ---- عرض expression blocks ----
+            int w = CalcExprWidth(curr);
+            curr->rect.w = w;
+            curr->rect.h = 32;
 
-        // جایگذاری دقیق فرزندان تو در تو بدون اینکه رو هم بیفتن
-        int currentXOffset = x + 40;
-        if (curr->arg1) {
-            LayoutBlockChain(curr->arg1, currentXOffset, currentY + 2);
-            currentXOffset += curr->arg1->rect.w + 20; // هول دادن دومی به جلو
+            // layout فرزندان داخلی
+            // برای AND/OR: [hw_pad] [arg1] [label] [arg2] [hw_pad]
+            int hw = 16; // half-width برای نوک شش‌ضلعی/بیضی
+            if (curr->opCode==OP_AND || curr->opCode==OP_OR) {
+                int a1w = CalcExprWidth(curr->arg1);
+                int a2w = CalcExprWidth(curr->arg2);
+                int labelW = (curr->opCode==OP_AND) ? 32 : 24;
+                int startX = x + hw + PAD;
+                if (curr->arg1) LayoutBlockChain(curr->arg1, startX, currentY);
+                startX += a1w + PAD + labelW + PAD;
+                if (curr->arg2) LayoutBlockChain(curr->arg2, startX, currentY);
+            } else if (curr->opCode==OP_NOT) {
+                int startX = x + hw + 32 + PAD; // "not" label
+                if (curr->arg1) LayoutBlockChain(curr->arg1, startX, currentY);
+            } else {
+                // عملگرهای %1 op %2
+                std::string txt = curr->text;
+                size_t p1 = txt.find("%1"), p2 = txt.find("%2");
+                int startX = x + PAD;
+                if (p1 != std::string::npos) {
+                    startX += (int)txt.substr(0,p1).size() * 8;
+                    if (curr->shape==SHAPE_BOOLEAN) startX += hw;
+                    int a1w = CalcExprWidth(curr->arg1);
+                    if (curr->arg1) LayoutBlockChain(curr->arg1, startX, currentY);
+                    startX += a1w + PAD;
+                    if (p2 != std::string::npos) {
+                        std::string mid = txt.substr(p1+2, p2-(p1+2));
+                        startX += (int)mid.size() * 8;
+                        if (curr->arg2) LayoutBlockChain(curr->arg2, startX, currentY);
+                    }
+                }
+                if (curr->shape==SHAPE_REPORTER) startX = x; // بیضی
+            }
         } else {
-            currentXOffset += 30; // فاصله باکس خالی
-        }
-        if (curr->arg2) {
-            LayoutBlockChain(curr->arg2, currentXOffset, currentY + 2);
-        }
-        if (curr->condition) {
-            LayoutBlockChain(curr->condition, x + 70, currentY + 5);
+            // ---- بلاک‌های معمولی STACK/HAT/C/E ----
+            int w = 160;
+
+            // جای arg1/arg2 در عرض بلاک
+            std::string txt = curr->text;
+            size_t p1 = txt.find("%1"), p2 = txt.find("%2");
+            if (p1 != std::string::npos) {
+                int beforeW = (int)txt.substr(0,p1).size() * 8 + PAD + 10;
+                int a1w = curr->arg1 ? CalcExprWidth(curr->arg1) : 30;
+                w = beforeW + a1w;
+                if (p2 != std::string::npos) {
+                    std::string mid = txt.substr(p1+2, p2-(p1+2));
+                    int a2w = curr->arg2 ? CalcExprWidth(curr->arg2) : 30;
+                    w += (int)mid.size()*8 + a2w + PAD*2;
+                    w += (int)txt.substr(p2+2).size()*8;
+                } else {
+                    w += (int)txt.substr(p1+2).size()*8 + PAD*2;
+                }
+                w = std::max(w, 160);
+            }
+            curr->rect.w = w;
+
+            // layout فرزندان arg در داخل بلاک
+            int cxOff = x + PAD + 10;
+            if (p1 != std::string::npos) {
+                cxOff += (int)txt.substr(0,p1).size() * 8;
+                if (curr->arg1) {
+                    LayoutBlockChain(curr->arg1, cxOff, currentY + 1);
+                    cxOff += CalcExprWidth(curr->arg1) + PAD;
+                } else {
+                    cxOff += 34;
+                }
+                if (p2 != std::string::npos) {
+                    std::string mid = txt.substr(p1+2, p2-(p1+2));
+                    cxOff += (int)mid.size()*8 + 2;
+                    if (curr->arg2) LayoutBlockChain(curr->arg2, cxOff, currentY + 1);
+                }
+            }
+            if (curr->condition) {
+                // condition slot در بلاک C-Shape
+                LayoutBlockChain(curr->condition, x + 72, currentY + 7);
+                // عرض بلاک رو بزرگتر کن اگه لازمه
+                int condRight = curr->condition->rect.x + curr->condition->rect.w + 16;
+                if (condRight > x + curr->rect.w) curr->rect.w = condRight - x;
+            }
+
+            // ارتفاع
+            if (curr->shape == SHAPE_C_SHAPE) {
+                int subH = curr->subStack ? LayoutBlockChain(curr->subStack, x+20, currentY+40) : 32;
+                h = 40 + subH + 28;
+            } else if (curr->shape == SHAPE_E_SHAPE) {
+                int subH1 = curr->subStack  ? LayoutBlockChain(curr->subStack,  x+20, currentY+40) : 32;
+                curr->midYOffset = 40 + subH1;
+                int subH2 = curr->subStack2 ? LayoutBlockChain(curr->subStack2, x+20, currentY+curr->midYOffset+28) : 32;
+                h = curr->midYOffset + 28 + subH2 + 28;
+            } else if (curr->shape == SHAPE_HAT) {
+                h = 54;
+            }
+            curr->rect.h = h;
         }
 
-        // کشسانی شدن ارتفاع (Height)
-        int h = 45;
-        if (curr->shape == SHAPE_C_SHAPE) {
-            int subH = curr->subStack ? LayoutBlockChain(curr->subStack, x + 20, currentY + 40) : 35;
-            h = 40 + subH + 30;
-        }
-        else if (curr->shape == SHAPE_E_SHAPE) {
-            int subH1 = curr->subStack ? LayoutBlockChain(curr->subStack, x + 20, currentY + 40) : 35;
-            curr->midYOffset = 40 + subH1;
-            int subH2 = curr->subStack2 ? LayoutBlockChain(curr->subStack2, x + 20, currentY + curr->midYOffset + 30) : 35;
-            h = curr->midYOffset + 30 + subH2 + 30;
-        }
-        else if (curr->shape == SHAPE_HAT) h = 55;
-        else if (curr->shape == SHAPE_REPORTER || curr->shape == SHAPE_BOOLEAN) h = 35;
-
-        curr->rect.h = h;
-        currentY += h;
+        currentY += curr->rect.h + (isExpr ? 0 : 2);
         curr = curr->next;
     }
     return currentY - y;
@@ -901,43 +962,62 @@ void TrySnapBlock(BlockSystemContext* ctx, Block* draggedBlock) {
                 if (dx < SNAP_R && dy < SNAP_R) { target.arg2 = draggedBlock; return; }
             }
 
-            // ---- 2. slot شرط C-Shape/E-Shape (If/Repeat/...) ----
-            if ((target.shape==SHAPE_C_SHAPE||target.shape==SHAPE_E_SHAPE) && target.condition==nullptr) {
-                int slotX = target.rect.x + 68, slotY = target.rect.y + 8;
+            // ---- 2. slot شرط C-Shape/E-Shape (If/Wait Until) ----
+            if ((target.shape==SHAPE_C_SHAPE||target.shape==SHAPE_E_SHAPE)
+                && target.condition==nullptr
+                && (target.opCode==OP_IF||target.opCode==OP_IF_ELSE||target.opCode==OP_WAIT_UNTIL)) {
+                // condition slot نزدیک به ناحیه شرط در نوار بالای بلاک
+                int slotX = target.rect.x + 72, slotY = target.rect.y + 10;
                 int dx = std::abs(draggedBlock->rect.x - slotX);
                 int dy = std::abs(draggedBlock->rect.y - slotY);
-                if (dx < SNAP_R && dy < SNAP_R) {
+                if (dx < SNAP_R*2 && dy < SNAP_R) {
                     target.condition = draggedBlock;
+                    return;
+                }
+            }
+            // ---- 2b. ورودی عددی REPEAT ----
+            if (target.opCode==OP_REPEAT && target.arg1==nullptr && draggedBlock->shape==SHAPE_REPORTER) {
+                int slotX = target.rect.x + 72, slotY = target.rect.y + 12;
+                int dx = std::abs(draggedBlock->rect.x - slotX);
+                int dy = std::abs(draggedBlock->rect.y - slotY);
+                if (dx < SNAP_R*2 && dy < SNAP_R) {
+                    target.arg1 = draggedBlock;
                     return;
                 }
             }
 
             // ---- 3. slot های arg1/arg2 بلاک‌های boolean (AND/OR/NOT) ----
             if (target.shape == SHAPE_BOOLEAN) {
-                int hw = target.rect.h / 2;
-                // slot چپ (arg1)
+                // slot چپ (arg1) - بر اساس inputRect که در Draw تنظیم شده
                 if (target.arg1 == nullptr) {
-                    int slotX = target.rect.x + hw + 2;
-                    int slotY = target.rect.y + 4;
+                    int slotX = target.inputRect1.x > 0 ? target.inputRect1.x : target.rect.x + target.rect.h/2 + 4;
+                    int slotY = target.inputRect1.y > 0 ? target.inputRect1.y : target.rect.y + 4;
                     int dx = std::abs(draggedBlock->rect.x - slotX);
                     int dy = std::abs(draggedBlock->rect.y - slotY);
                     if (dx < SNAP_R && dy < SNAP_R) { target.arg1 = draggedBlock; return; }
                 }
                 // slot راست (arg2) - فقط AND/OR
                 if (target.arg2 == nullptr && (target.opCode==OP_AND||target.opCode==OP_OR)) {
-                    int slotX = target.rect.x + target.rect.w - hw - 44;
-                    int slotY = target.rect.y + 4;
+                    int slotX = target.inputRect2.x > 0 ? target.inputRect2.x : target.rect.x + target.rect.w - target.rect.h/2 - 44;
+                    int slotY = target.inputRect2.y > 0 ? target.inputRect2.y : target.rect.y + 4;
                     int dx = std::abs(draggedBlock->rect.x - slotX);
                     int dy = std::abs(draggedBlock->rect.y - slotY);
                     if (dx < SNAP_R && dy < SNAP_R) { target.arg2 = draggedBlock; return; }
                 }
             }
 
-            // ---- 4. slot arg1 عملگرهای REPORTER (%1 بدون inputRect) ----
-            if (target.shape == SHAPE_REPORTER && target.arg1 == nullptr && target.inputRect1.w == 0) {
-                int dx = std::abs(draggedBlock->rect.x - target.rect.x);
-                int dy = std::abs(draggedBlock->rect.y - target.rect.y);
-                if (dx < SNAP_R && dy < SNAP_R) { target.arg1 = draggedBlock; return; }
+            // ---- 4. slot reporter (%1/%2 با inputRect) ----
+            if (target.shape == SHAPE_REPORTER) {
+                if (target.arg1 == nullptr && target.inputRect1.w > 0) {
+                    int dx = std::abs(draggedBlock->rect.x - target.inputRect1.x);
+                    int dy = std::abs(draggedBlock->rect.y - target.inputRect1.y);
+                    if (dx < SNAP_R && dy < SNAP_R) { target.arg1 = draggedBlock; return; }
+                }
+                if (target.arg2 == nullptr && target.inputRect2.w > 0) {
+                    int dx = std::abs(draggedBlock->rect.x - target.inputRect2.x);
+                    int dy = std::abs(draggedBlock->rect.y - target.inputRect2.y);
+                    if (dx < SNAP_R && dy < SNAP_R) { target.arg2 = draggedBlock; return; }
+                }
             }
         }
 
@@ -1142,214 +1222,316 @@ void HandleBlockEvents(BlockSystemContext* ctx, SDL_Event* e) {
 
 // *** رسم بلاک‌ها با شکل‌های حرفه‌ای (C-Shape، Oval، Hexagon) ***
 void DrawScratchBlock(SDL_Renderer* renderer, Block& b, int x, int y, TTF_Font* font) {
-    SDL_Color c = GetCategoryColor(b.category);
-    // رنگ highlight (روشن‌تر از رنگ اصلی)
-    SDL_Color ch = {(Uint8)std::min(255,c.r+40),(Uint8)std::min(255,c.g+40),(Uint8)std::min(255,c.b+40),255};
-    // رنگ shadow (تیره‌تر)
-    SDL_Color cs = {(Uint8)(c.r*6/10),(Uint8)(c.g*6/10),(Uint8)(c.b*6/10),255};
+    SDL_Color c  = GetCategoryColor(b.category);
+    SDL_Color cd = {(Uint8)(c.r*75/100),(Uint8)(c.g*75/100),(Uint8)(c.b*75/100),255}; // dark
+    SDL_Color cl = {(Uint8)std::min(255,c.r+55),(Uint8)std::min(255,c.g+55),(Uint8)std::min(255,c.b+55),255}; // light
 
-    // ---- helper lambdas ----
-    auto FR = [&](int rx,int ry,int rw,int rh, SDL_Color col){
-        SDL_SetRenderDrawColor(renderer,col.r,col.g,col.b,col.a);
-        SDL_Rect r={rx,ry,rw,rh}; SDL_RenderFillRect(renderer,&r);
-    };
-    auto DR = [&](int rx,int ry,int rw,int rh, SDL_Color col){
-        SDL_SetRenderDrawColor(renderer,col.r,col.g,col.b,col.a);
-        SDL_Rect r={rx,ry,rw,rh}; SDL_RenderDrawRect(renderer,&r);
-    };
-    auto Line = [&](int x1,int y1,int x2,int y2, SDL_Color col){
-        SDL_SetRenderDrawColor(renderer,col.r,col.g,col.b,col.a);
-        SDL_RenderDrawLine(renderer,x1,y1,x2,y2);
-    };
+    int W = b.rect.w, H = b.rect.h;
 
-    // ====================================================
-    // سایه نرم (3 لایه با شفافیت)
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
-    for(int i=3;i>=1;i--){
-        SDL_SetRenderDrawColor(renderer,0,0,0, 25*i);
-        if(b.shape==SHAPE_C_SHAPE||b.shape==SHAPE_E_SHAPE){
-            SDL_Rect s1={x+i,y+i,b.rect.w,40}; SDL_RenderFillRect(renderer,&s1);
-            SDL_Rect s2={x+i,y+40+i,20,b.rect.h-70}; SDL_RenderFillRect(renderer,&s2);
-            SDL_Rect s3={x+i,y+b.rect.h-30+i,b.rect.w,30}; SDL_RenderFillRect(renderer,&s3);
-        } else {
-            SDL_Rect s={x+i,y+i,b.rect.w,b.rect.h}; SDL_RenderFillRect(renderer,&s);
+    // ── helper lambdas ──────────────────────────────────────────
+    auto FR  = [&](int rx,int ry,int rw,int rh,SDL_Color col){
+        if(rw<=0||rh<=0) return;
+        SDL_SetRenderDrawColor(renderer,col.r,col.g,col.b,col.a);
+        SDL_Rect r={rx,ry,rw,rh}; SDL_RenderFillRect(renderer,&r); };
+    auto DRP = [&](int rx,int ry,int px,int py,SDL_Color col){
+        SDL_SetRenderDrawColor(renderer,col.r,col.g,col.b,col.a);
+        SDL_RenderDrawLine(renderer,rx,ry,px,py); };
+
+    // rounded rect helper (corner radius r)
+    auto RoundRect = [&](int rx,int ry,int rw,int rh,int r,SDL_Color col){
+        if(rw<=0||rh<=0) return;
+        FR(rx+r,ry,rw-2*r,rh,col);
+        FR(rx,ry+r,r,rh-2*r,col);
+        FR(rx+rw-r,ry+r,r,rh-2*r,col);
+        // corners
+        for(int i=0;i<r;i++){
+            int len=(int)std::sqrt((float)(r*r-(r-1-i)*(r-1-i)));
+            FR(rx+r-len,ry+i,len,1,col);
+            FR(rx+rw-r,ry+i,len,1,col);
+            FR(rx+r-len,ry+rh-1-i,len,1,col);
+            FR(rx+rw-r,ry+rh-1-i,len,1,col);
         }
-    }
-    SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_NONE);
+    };
 
-    // ====================================================
-    // رسم بدنه اصلی
-    if (b.shape == SHAPE_C_SHAPE || b.shape == SHAPE_E_SHAPE) {
-        int topH = 40, botH = 30;
+    // ── سایه ────────────────────────────────────────────────────
+    SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_BLEND);
+    SDL_SetRenderDrawColor(renderer,0,0,0,40);
+    SDL_Rect sh={x+3,y+3,W,H}; SDL_RenderFillRect(renderer,&sh);
+    SDL_SetRenderDrawBlendMode(renderer,SDL_BLENDMODE_NONE);
 
-        // نوار بالا با gradient دستی (2 رنگ)
-        FR(x, y, b.rect.w, topH, c);
-        FR(x, y, b.rect.w, 3, ch); // خط روشن بالا
+    // ════════════════════════════════════════════════════════════
+    if (b.shape == SHAPE_REPORTER) {
+        // ── بیضی (oval) ─────────────────────────────────────────
+        int r = H/2;
+        FR(x+r, y, W-2*r, H, c);
+        for(int i=0;i<r;i++){
+            int len=(int)std::sqrt((float)(r*r-(r-1-i)*(r-1-i)));
+            FR(x+r-len,y+i,len*2+(W-2*r),1,c);
+        }
+        // highlight strip
+        FR(x+r,y+1,W-2*r,2,cl);
+        for(int i=0;i<r-1;i++){
+            int len=(int)std::sqrt((float)((r-1)*(r-1)-(r-2-i)*(r-2-i)));
+            FR(x+r-1-len,y+1+i,1,1,cl);
+            FR(x+W-r+len,y+1+i,1,1,cl);
+        }
 
-        if (b.shape == SHAPE_E_SHAPE) {
-            FR(x, y+topH, 20, b.midYOffset-topH, c);
-            // نوار وسط (else)
-            FR(x, y+b.midYOffset, b.rect.w-30, 30, c);
-            FR(x, y+b.midYOffset, b.rect.w-30, 2, ch);
-            FR(x, y+b.midYOffset+30, 20, b.rect.h-(b.midYOffset+30)-botH, c);
+    } else if (b.shape == SHAPE_BOOLEAN) {
+        // ── شش‌ضلعی (hexagon) ───────────────────────────────────
+        int hp = H/2; // نوک تیزی
+        // بدنه مستطیل وسط
+        FR(x+hp, y, W-2*hp, H, c);
+        // مثلث چپ
+        for(int i=0;i<hp;i++){
+            int len = i+1;
+            FR(x+hp-len, y+hp-i-1, len, 1, c);
+            FR(x+hp-len, y+hp+i,   len, 1, c);
+        }
+        // مثلث راست
+        for(int i=0;i<hp;i++){
+            int len = i+1;
+            FR(x+W-hp, y+hp-i-1, len, 1, c);
+            FR(x+W-hp, y+hp+i,   len, 1, c);
+        }
+        // highlight
+        FR(x+hp,y+1,W-2*hp,1,cl);
+        DRP(x+hp,y+1,x+1,y+hp,cl);
+        DRP(x+W-hp,y+1,x+W-1,y+hp,cl);
+
+    } else if (b.shape==SHAPE_C_SHAPE || b.shape==SHAPE_E_SHAPE) {
+        // ── C-Shape / E-Shape ────────────────────────────────────
+        int topH=40, botH=28, armW=20;
+
+        // نوار بالا
+        RoundRect(x,y,W,topH,6,c);
+        FR(x,y+topH-6,W,6,c); // پایین نوار بالا رو پر کن (بدون گردی)
+        FR(x,y+1,W,2,cl); // highlight
+
+        if (b.shape==SHAPE_E_SHAPE) {
+            int mid = b.midYOffset;
+            // بازوی چپ اول
+            FR(x,y+topH,armW,mid-topH,c);
+            // نوار else
+            FR(x,y+mid,W-armW,28,c);
+            FR(x,y+mid+1,W-armW,2,cl);
+            // بازوی چپ دوم
+            FR(x,y+mid+28,armW,H-(mid+28)-botH,c);
         } else {
-            FR(x, y+topH, 20, b.rect.h-topH-botH, c);
+            // بازوی چپ
+            FR(x,y+topH,armW,H-topH-botH,c);
         }
 
         // نوار پایین
-        FR(x, y+b.rect.h-botH, b.rect.w, botH, cs);
-        FR(x, y+b.rect.h-botH, b.rect.w, 2, c); // خط جدا
+        FR(x,y+H-botH,W,botH,c);
+        FR(x,y+H-botH,W,botH,cd);
+        RoundRect(x,y+H-botH,W,botH,6,cd);
+        FR(x,y+H-botH,W,6,cd);
+        FR(x,y+H-botH,W,2,c);
 
-        // ناحیه داخلی (داکر) برای نشون دادن عمق
+        // ناحیه داخل (رنگ کمی تیره‌تر = نشون دهنده عمق)
+        SDL_Color inner = {(Uint8)(cd.r*90/100),(Uint8)(cd.g*90/100),(Uint8)(cd.b*90/100),255};
         if(b.shape==SHAPE_C_SHAPE){
-            int innerY=y+topH, innerH=b.rect.h-topH-botH;
-            FR(x+20, innerY, b.rect.w-20, innerH, {(Uint8)(cs.r*8/10),(Uint8)(cs.g*8/10),(Uint8)(cs.b*8/10),60});
+            FR(x+armW,y+topH,W-armW,H-topH-botH,inner);
         } else {
-            int inner1H = b.midYOffset-topH;
-            FR(x+20, y+topH, b.rect.w-20, inner1H, {(Uint8)(cs.r*8/10),(Uint8)(cs.g*8/10),(Uint8)(cs.b*8/10),60});
-            int inner2Y = y+b.midYOffset+30, inner2H = b.rect.h-b.midYOffset-30-botH;
-            FR(x+20, inner2Y, b.rect.w-20, inner2H, {(Uint8)(cs.r*8/10),(Uint8)(cs.g*8/10),(Uint8)(cs.b*8/10),60});
+            int mid=b.midYOffset;
+            FR(x+armW,y+topH,W-armW,mid-topH,inner);
+            FR(x+armW,y+mid+28,W-armW,H-(mid+28)-botH,inner);
         }
 
-        // نوشتن Else روی نوار وسط
-        if (b.shape == SHAPE_E_SHAPE && font) {
-            SDL_Surface* es = TTF_RenderText_Blended(font, "else", {255,255,255,220});
+        // نوشتن "else" روی نوار میانی
+        if(b.shape==SHAPE_E_SHAPE && font){
+            SDL_Surface* es=TTF_RenderText_Blended(font,"else",{255,255,255,200});
             if(es){
-                SDL_Rect er={x+25, y+b.midYOffset+5, es->w, es->h};
+                SDL_Rect er={x+armW+6,y+b.midYOffset+6,es->w,es->h};
                 SDL_Texture* et=SDL_CreateTextureFromSurface(renderer,es);
-                SDL_RenderCopy(renderer,et,NULL,&er); SDL_DestroyTexture(et); SDL_FreeSurface(es);
+                SDL_RenderCopy(renderer,et,NULL,&er);
+                SDL_DestroyTexture(et); SDL_FreeSurface(es);
             }
         }
 
-        // شرط slot (اگه بلاک شرطی نداشت - جایگاه خالی نشون بده)
-        if (!b.condition && (b.opCode==OP_IF||b.opCode==OP_IF_ELSE||b.opCode==OP_REPEAT||b.opCode==OP_WAIT_UNTIL)) {
-            FR(x+68, y+8, 45, 22, cs);
-            DR(x+68, y+8, 45, 22, {255,255,255,50});
+        // condition slot خالی
+        if(!b.condition && (b.opCode==OP_IF||b.opCode==OP_IF_ELSE||b.opCode==OP_WAIT_UNTIL)){
+            // شکل شش‌ضلعی کوچک برای condition slot
+            int sx=x+70,sy=y+10,sw=44,sh=20,shp=sh/2;
+            SDL_Color sc={(Uint8)(cd.r*80/100),(Uint8)(cd.g*80/100),(Uint8)(cd.b*80/100),255};
+            FR(sx+shp,sy,sw-2*shp,sh,sc);
+            for(int i=0;i<shp;i++){
+                FR(sx+shp-i-1,sy+shp-i-1,i+1,1,sc);
+                FR(sx+shp-i-1,sy+shp+i,  i+1,1,sc);
+                FR(sx+sw-shp, sy+shp-i-1,i+1,1,sc);
+                FR(sx+sw-shp, sy+shp+i,  i+1,1,sc);
+            }
         }
-
-    } else if (b.shape == SHAPE_REPORTER) {
-        // بیضی کامل‌تر
-        FR(x+6, y, b.rect.w-12, b.rect.h, c);
-        for(int i=0;i<6;i++){
-            int sw=i*2+2, sh=b.rect.h-i*2;
-            FR(x+6-sw/2, y+i, sw, sh-i, c);
-            FR(x+b.rect.w-6-sw/2, y+i, sw, sh-i, c);
+        // condition slot خالی برای REPEAT
+        if(!b.arg1 && b.opCode==OP_REPEAT){
+            SDL_Color sc={cd.r,cd.g,cd.b,255};
+            FR(x+68,y+10,32,22,sc);
+            RoundRect(x+68,y+10,32,22,4,sc);
         }
-        FR(x, y+6, b.rect.w, b.rect.h-12, c);
-        FR(x, y+6, b.rect.w, 2, ch); // highlight بالا
-        FR(x, y+b.rect.h-8, b.rect.w, 2, cs); // shadow پایین
-
-    } else if (b.shape == SHAPE_BOOLEAN) {
-        // شش‌ضلعی واقعی‌تر
-        int hw = b.rect.h/2;
-        FR(x+hw, y, b.rect.w-hw*2, b.rect.h, c); // مرکز
-        for(int i=0;i<hw;i++){
-            float t = (float)i/hw;
-            int sw = (int)(i*2)+2;
-            FR(x+hw-i-1, y+i, sw, 1, c);
-            FR(x+hw-i-1, y+b.rect.h-i-1, sw, 1, c);
-            FR(x+b.rect.w-hw+i-1, y+i, sw, 1, c);
-            FR(x+b.rect.w-hw+i-1, y+b.rect.h-i-1, sw, 1, c);
-        }
-        // slot های arg1/arg2 برای and/or/not
-        if(b.opCode==OP_AND||b.opCode==OP_OR){
-            if(!b.arg1){ FR(x+hw+2,y+4,42,b.rect.h-8,cs); DR(x+hw+2,y+4,42,b.rect.h-8,{255,255,255,60}); }
-            if(!b.arg2){ FR(x+b.rect.w-hw-44,y+4,42,b.rect.h-8,cs); DR(x+b.rect.w-hw-44,y+4,42,b.rect.h-8,{255,255,255,60}); }
-        } else if(b.opCode==OP_NOT){
-            if(!b.arg1){ FR(x+hw+4,y+4,50,b.rect.h-8,cs); DR(x+hw+4,y+4,50,b.rect.h-8,{255,255,255,60}); }
-        }
-        FR(x+hw, y, b.rect.w-hw*2, 2, ch);
 
     } else {
-        // STACK / HAT / CAP - گوشه‌های گرد شبیه‌سازی شده
-        FR(x+3, y, b.rect.w-6, b.rect.h, c);
-        FR(x, y+3, b.rect.w, b.rect.h-6, c);
-        FR(x, y+3, b.rect.w, 2, ch); // highlight بالا
-        FR(x, y+b.rect.h-5, b.rect.w, 2, cs); // shadow پایین
+        // ── STACK / HAT / CAP ────────────────────────────────────
+        RoundRect(x,y,W,H,6,c);
+        FR(x,y+1,W,2,cl); // highlight
+        FR(x,y+H-4,W,3,cd); // shadow bottom
     }
 
-    // کلاهک HAT
-    if (b.shape == SHAPE_HAT) {
-        FR(x, y-12, 75, 14, c);
-        FR(x, y-12, 75, 3, ch);
-        // شکل کج کلاه
-        for(int i=0;i<8;i++) FR(x+75+i, y-12+i, 2, 14-i*2, c);
-    }
-
-    // پین اتصال پازلی پایین
-    if ((b.shape==SHAPE_STACK||b.shape==SHAPE_HAT||b.shape==SHAPE_C_SHAPE||b.shape==SHAPE_E_SHAPE)
-        && b.shape!=SHAPE_CAP && b.opCode!=OP_FOREVER && b.opCode!=OP_STOP_ALL) {
-        FR(x+12, y+b.rect.h, 30, 8, cs);
-        FR(x+12, y+b.rect.h, 30, 2, c);
-    }
-    // پین اتصال بالا (شکاف)
-    if (b.shape==SHAPE_STACK||b.shape==SHAPE_C_SHAPE||b.shape==SHAPE_E_SHAPE||b.shape==SHAPE_CAP) {
-        FR(x+12, y-1, 30, 4, {(Uint8)(cs.r*8/10),(Uint8)(cs.g*8/10),(Uint8)(cs.b*8/10),255});
-    }
-
-    // ====================================================
-    // رندر متن و ورودی‌ها
-    if (!font) return;
-    int cX = x + 10;
-    int cY = y + (b.shape==SHAPE_HAT ? 14 : (b.shape==SHAPE_REPORTER||b.shape==SHAPE_BOOLEAN ? 8 : 12));
-
-    auto DrawText = [&](const std::string& part) {
-        if (part.empty()) return;
-        SDL_Surface* s = TTF_RenderText_Blended(font, part.c_str(), {255,255,255,255});
-        if (!s) return;
-        // سایه متن
-        SDL_Surface* sh = TTF_RenderText_Blended(font, part.c_str(), {0,0,0,80});
-        if(sh){
-            SDL_Rect sr={cX+1,cY+1,sh->w,sh->h};
-            SDL_Texture* st=SDL_CreateTextureFromSurface(renderer,sh);
-            SDL_RenderCopy(renderer,st,NULL,&sr); SDL_DestroyTexture(st); SDL_FreeSurface(sh);
+    // ── کلاهک HAT ────────────────────────────────────────────────
+    if(b.shape==SHAPE_HAT){
+        // گنبد بالا
+        for(int i=0;i<16;i++){
+            int hw2=(int)(70*(1.0f-std::pow((i-8)/8.0f,2)));
+            FR(x+5+70-hw2,y-16+i,hw2*2,1,c);
         }
-        SDL_Rect tr={cX,cY,s->w,s->h};
-        SDL_Texture* t=SDL_CreateTextureFromSurface(renderer,s);
-        SDL_RenderCopy(renderer,t,NULL,&tr); SDL_DestroyTexture(t);
-        cX += s->w + 4;
-        SDL_FreeSurface(s);
+        FR(x,y,W,3,cl);
+    }
+
+    // ── پین پازلی ────────────────────────────────────────────────
+    bool hasBump = (b.shape==SHAPE_STACK||b.shape==SHAPE_HAT||
+                    b.shape==SHAPE_C_SHAPE||b.shape==SHAPE_E_SHAPE)
+                   && b.opCode!=OP_FOREVER && b.opCode!=OP_STOP_ALL;
+    bool hasNotch = (b.shape==SHAPE_STACK||b.shape==SHAPE_C_SHAPE||
+                     b.shape==SHAPE_E_SHAPE||b.shape==SHAPE_CAP);
+
+    if(hasBump){
+        // برآمدگی پایین (trapezoidal bump)
+        FR(x+14,y+H,  28,4,cd);
+        FR(x+16,y+H+4,24,3,cd);
+        FR(x+18,y+H+7,20,2,cd);
+    }
+    if(hasNotch){
+        // شکاف بالا
+        FR(x+14,y-2,28,4,{(Uint8)(cd.r*80/100),(Uint8)(cd.g*80/100),(Uint8)(cd.b*80/100),255});
+        FR(x+16,y-5,24,3,{(Uint8)(cd.r*80/100),(Uint8)(cd.g*80/100),(Uint8)(cd.b*80/100),255});
+    }
+
+    if(!font) return;
+
+    bool isExpr=(b.shape==SHAPE_REPORTER||b.shape==SHAPE_BOOLEAN);
+    int cX = x + (isExpr ? (b.shape==SHAPE_BOOLEAN?(H/2)+4:8) : 10);
+    int cY = y + (isExpr ? 7 : (b.shape==SHAPE_HAT?16:13));
+    int txtH = 18; // ارتفاع خط متن
+
+    SDL_Color txtCol = {255,255,255,255};
+
+    auto DrawTxt = [&](const std::string& s) -> int {
+        if(s.empty()) return 0;
+        SDL_Surface* sf=TTF_RenderText_Blended(font,s.c_str(),txtCol);
+        if(!sf) return 0;
+        int sw2=sf->w;
+        SDL_Rect tr={cX,cY,sf->w,sf->h};
+        SDL_Texture* tx=SDL_CreateTextureFromSurface(renderer,sf);
+        SDL_RenderCopy(renderer,tx,NULL,&tr);
+        SDL_DestroyTexture(tx); SDL_FreeSurface(sf);
+        cX+=sw2+4;
+        return sw2;
     };
 
-    auto DrawInputBox = [&](int paramNum, std::string& valStr, SDL_Rect& outRect, Block* argBlock) {
-        if (argBlock != nullptr) {
-            outRect = {0,0,0,0};
-            cX += argBlock->rect.w + 4;
+    // رسم slot خالی (مستطیل/شش‌ضلعی) برای ورودی
+    auto DrawSlot = [&](bool isBoolean, SDL_Rect& outR) {
+        int slotW = isBoolean ? 40 : 32;
+        int slotH = isBoolean ? (H>30?24:18) : (isExpr?18:22);
+        outR = {cX, cY-2, slotW, slotH};
+        if(isBoolean){
+            // شش‌ضلعی کوچک
+            int hp2=slotH/2;
+            SDL_Color sc={(Uint8)(cd.r*80/100),(Uint8)(cd.g*80/100),(Uint8)(cd.b*80/100),255};
+            FR(cX+hp2,cY-2,slotW-2*hp2,slotH,sc);
+            for(int i=0;i<hp2;i++){
+                FR(cX+hp2-i-1,cY-2+hp2-i-1,i+1,1,sc);
+                FR(cX+hp2-i-1,cY-2+hp2+i,  i+1,1,sc);
+                FR(cX+slotW-hp2,cY-2+hp2-i-1,i+1,1,sc);
+                FR(cX+slotW-hp2,cY-2+hp2+i,  i+1,1,sc);
+            }
+        } else {
+            // بیضی کوچک
+            int rr=slotH/2;
+            SDL_Color sc={255,255,255,255};
+            FR(cX+rr,cY-2,slotW-2*rr,slotH,sc);
+            for(int i=0;i<rr;i++){
+                int len2=(int)std::sqrt((float)(rr*rr-(rr-1-i)*(rr-1-i)));
+                FR(cX+rr-len2,cY-2+i,len2*2+(slotW-2*rr),1,sc);
+            }
+        }
+        cX += slotW + 4;
+    };
+
+    // رسم ورودی (عدد/متن قابل ویرایش)
+    auto DrawInput = [&](std::string& val, SDL_Rect& outR, Block* arg, bool forBool=false) {
+        if(arg){
+            // بلاک داخل slot - فقط جا باز میکنیم (خودش جدا رندر میشه)
+            outR={0,0,0,0};
+            cX += arg->rect.w + 4;
             return;
         }
-        const char* disp = valStr.empty() ? " " : valStr.c_str();
-        SDL_Surface* s = TTF_RenderText_Blended(font, disp, {30,30,30,255});
-        int bw = s ? std::max(24, s->w+12) : 24;
-        int bh = 22;
-        outRect = {cX, cY-2, bw, bh};
-        // باکس ورودی با گوشه‌های گرد
-        FR(cX+2, cY-2, bw-4, bh, {255,255,255,255});
-        FR(cX, cY, bw, bh-4, {255,255,255,255});
-        DR(cX+2, cY-2, bw-4, bh, {180,180,180,255});
-        if(s){
-            SDL_Rect tr={cX+6, cY+2, s->w, s->h};
-            SDL_Texture* t=SDL_CreateTextureFromSurface(renderer,s);
-            SDL_RenderCopy(renderer,t,NULL,&tr); SDL_DestroyTexture(t); SDL_FreeSurface(s);
+        bool needBool = forBool;
+        if(needBool){
+            DrawSlot(true, outR);
+        } else {
+            // باکس سفید گرد برای ورودی عدد
+            SDL_Surface* sv=TTF_RenderText_Blended(font, val.empty()?" ":val.c_str(), {30,30,30,255});
+            int bw = sv ? std::max(30, sv->w+16) : 30;
+            int bh = isExpr ? 18 : 22;
+            outR={cX,cY-2,bw,bh};
+            int rr2=bh/2;
+            FR(cX+rr2,cY-2,bw-2*rr2,bh,{255,255,255,255});
+            for(int i=0;i<rr2;i++){
+                int len2=(int)std::sqrt((float)(rr2*rr2-(rr2-1-i)*(rr2-1-i)));
+                FR(cX+rr2-len2,cY-2+i,len2*2+(bw-2*rr2),1,{255,255,255,255});
+            }
+            if(sv){
+                SDL_Rect tr={cX+8,cY,sv->w,sv->h};
+                SDL_Texture* tv=SDL_CreateTextureFromSurface(renderer,sv);
+                SDL_RenderCopy(renderer,tv,NULL,&tr);
+                SDL_DestroyTexture(tv); SDL_FreeSurface(sv);
+            }
+            cX+=bw+5;
         }
-        cX += bw + 5;
     };
 
+    // ── رندر بلاک‌های خاص AND/OR/NOT ────────────────────────────
+    if(b.opCode==OP_AND || b.opCode==OP_OR){
+        // [hex slot] "and/or" [hex slot]
+        int hp=H/2;
+        cX = x+hp+4; cY=y+(H-18)/2;
+        // slot اول
+        if(b.arg1){ b.inputRect1={0,0,0,0}; cX+=b.arg1->rect.w+4; }
+        else { DrawSlot(true, b.inputRect1); }
+        // label
+        DrawTxt(b.opCode==OP_AND ? "and" : "or");
+        // slot دوم
+        if(b.arg2){ b.inputRect2={0,0,0,0}; cX+=b.arg2->rect.w+4; }
+        else { DrawSlot(true, b.inputRect2); }
+        return;
+    }
+    if(b.opCode==OP_NOT){
+        int hp=H/2;
+        cX=x+hp+4; cY=y+(H-18)/2;
+        DrawTxt("not");
+        if(b.arg1){ b.inputRect1={0,0,0,0}; cX+=b.arg1->rect.w+4; }
+        else { DrawSlot(true, b.inputRect1); }
+        b.inputRect2={0,0,0,0};
+        return;
+    }
+
     std::string txt = b.text;
-    size_t p1 = txt.find("%1"), p2 = txt.find("%2");
-    if (p1 != std::string::npos) {
-        DrawText(txt.substr(0, p1));
-        DrawInputBox(1, b.param1Str, b.inputRect1, b.arg1);
-        if (p2 != std::string::npos) {
-            DrawText(txt.substr(p1+2, p2-(p1+2)));
-            DrawInputBox(2, b.param2Str, b.inputRect2, b.arg2);
-            DrawText(txt.substr(p2+2));
+    size_t p1=txt.find("%1"), p2=txt.find("%2");
+
+    if(p1!=std::string::npos){
+        DrawTxt(txt.substr(0,p1));
+        bool needBool1 = (b.shape==SHAPE_C_SHAPE||b.shape==SHAPE_E_SHAPE) && p1==txt.find("%1") && b.opCode!=OP_REPEAT;
+        DrawInput(b.param1Str, b.inputRect1, b.arg1, needBool1);
+        if(p2!=std::string::npos){
+            DrawTxt(txt.substr(p1+2, p2-(p1+2)));
+            DrawInput(b.param2Str, b.inputRect2, b.arg2);
+            DrawTxt(txt.substr(p2+2));
         } else {
-            DrawText(txt.substr(p1+2));
-            b.inputRect2 = {0,0,0,0};
+            DrawTxt(txt.substr(p1+2));
+            b.inputRect2={0,0,0,0};
         }
     } else {
-        DrawText(txt);
-        b.inputRect1 = b.inputRect2 = {0,0,0,0};
+        DrawTxt(txt);
+        b.inputRect1=b.inputRect2={0,0,0,0};
     }
 }
 
@@ -1420,24 +1602,43 @@ void RenderBlockSystem(SDL_Renderer* renderer, BlockSystemContext* ctx, TTF_Font
 
     // 4. رسم بلاک‌های پالت با اسکرول (برش تصویر تا بیرون نزنند)
     SDL_RenderSetClipRect(renderer, &ctx->paletteArea);
+    // پاس اول پالت: بلاک‌های غیر expression
     for (auto& b : ctx->blocks) {
-        if (b.rect.x < ctx->paletteArea.w) DrawScratchBlock(renderer, b, b.rect.x, b.rect.y + ctx->scrollY, font);
+        if (b.rect.x < ctx->paletteArea.w && b.shape!=SHAPE_REPORTER && b.shape!=SHAPE_BOOLEAN)
+            DrawScratchBlock(renderer, b, b.rect.x, b.rect.y + ctx->scrollY, font);
+    }
+    // پاس دوم پالت: expression blocks (روی بقیه)
+    for (auto& b : ctx->blocks) {
+        if (b.rect.x < ctx->paletteArea.w && (b.shape==SHAPE_REPORTER||b.shape==SHAPE_BOOLEAN))
+            DrawScratchBlock(renderer, b, b.rect.x, b.rect.y + ctx->scrollY, font);
     }
     SDL_RenderSetClipRect(renderer, NULL);
 
-    // 5. رسم بلاک‌های محیط کار (اول C-Shape و E-Shape تا بلاک‌های داخلی روی اونا قرار بگیرن)
+    // 5. رسم بلاک‌های محیط کار
+    // پاس اول: C-Shape و E-Shape (پس‌زمینه)
     for (auto& b : ctx->blocks) {
-        if (b.rect.x >= ctx->paletteArea.w && (b.shape == SHAPE_C_SHAPE || b.shape == SHAPE_E_SHAPE))
+        if (b.rect.x >= ctx->paletteArea.w && (b.shape==SHAPE_C_SHAPE||b.shape==SHAPE_E_SHAPE))
             DrawScratchBlock(renderer, b, b.rect.x, b.rect.y, font);
     }
+    // پاس دوم: بقیه بلاک‌های workspace (STACK/HAT/CAP)
     for (auto& b : ctx->blocks) {
-        if (b.rect.x >= ctx->paletteArea.w && b.shape != SHAPE_C_SHAPE && b.shape != SHAPE_E_SHAPE)
+        if (b.rect.x >= ctx->paletteArea.w && b.shape!=SHAPE_C_SHAPE && b.shape!=SHAPE_E_SHAPE
+            && b.shape!=SHAPE_REPORTER && b.shape!=SHAPE_BOOLEAN)
             DrawScratchBlock(renderer, b, b.rect.x, b.rect.y, font);
+    }
+    // پاس سوم: بلاک‌های expression (reporter/boolean) که روی بلاک‌های دیگه قرار دارن
+    // اینا باید آخر رندر بشن تا روی بدنه بلاک host نشون داده بشن
+    for (auto& b : ctx->blocks) {
+        if (b.rect.x >= ctx->paletteArea.w && (b.shape==SHAPE_REPORTER||b.shape==SHAPE_BOOLEAN)) {
+            // چک: آیا این بلاک داخل یه بلاک دیگه‌ای افتاده؟
+            bool isChild = false;
+            for (auto& p : ctx->blocks) {
+                if (p.arg1==&b || p.arg2==&b || p.condition==&b) { isChild=true; break; }
+            }
+            DrawScratchBlock(renderer, b, b.rect.x, b.rect.y, font);
+        }
     }
 
-    // ==============================================================
-    // 6. رسم پاپ‌آپ‌ها (متغیر و توابع دلخواه)
-    // ==============================================================
 
     // الف) پاپ‌آپ ساخت متغیر (نارنجی/آبی)
     if (ctx->isMakingVar) {
@@ -1523,9 +1724,6 @@ void RenderBlockSystem(SDL_Renderer* renderer, BlockSystemContext* ctx, TTF_Font
         }
     }
 
-    // ============================================================
-    // پاپ‌آپ Add Extension  (مثل اسکرچ)
-    // ============================================================
     if (ctx->showExtensionMenu) {
         // تاریک کردن پس‌زمینه
         SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
@@ -1590,10 +1788,6 @@ void RenderBlockSystem(SDL_Renderer* renderer, BlockSystemContext* ctx, TTF_Font
         }
     }
 }
-
-// ============================================================
-//  DEBUG SYSTEM FUNCTIONS  (DebugSystem.cpp)
-// ============================================================
 
 void InitDebug(DebugContext* ctx) {
     ctx->showWindow = false;
@@ -1871,9 +2065,6 @@ void HandleDebugEvents(DebugContext* ctx, SDL_Event* e) {
     }
 }
 
-// ============================================================
-//  FILE MENU FUNCTIONS  (FileMenu.cpp)
-// ============================================================
 
 void InitResources(AppContext* app) {
     std::vector<std::string> possiblePaths = {
@@ -2054,10 +2245,6 @@ void DrawUI(AppContext* app, Button* buttons, int count, MenuState* menuState) {
     }
 }
 
-// ============================================================
-//  SAVE / LOAD  —  V3  (مثل اسکرچ، همه چیز کامل برمیگرده)
-// ============================================================
-
 // ---- string helpers ----
 static std::string Encode(const std::string& s) {
     std::string o; o.reserve(s.size());
@@ -2083,10 +2270,6 @@ static std::string Decode(const std::string& s) {
     return o;
 }
 
-
-// ================================================================
-//  SaveProject  —  همه چیز رو ذخیره می‌کنه
-// ================================================================
 void SaveProject(std::string name, BlockSystemContext* blockCtx, SpriteContext* spriteCtx) {
     UpdateProjectIndex(name);
     std::ofstream f(name + ".scr");
@@ -2121,7 +2304,6 @@ void SaveProject(std::string name, BlockSystemContext* blockCtx, SpriteContext* 
         f << Encode(s.name) << "\t" << s.x << "\t" << s.y << "\t"
           << s.direction << "\t" << s.scale << "\t" << (int)s.isVisible << "\n";
 
-    // ---- BLOCKS (فقط workspace، نه palette) ----
     std::vector<const Block*> ws;
     ws.reserve(blockCtx->blocks.size());
     for (auto& b : blockCtx->blocks)
@@ -2160,9 +2342,7 @@ void SaveProject(std::string name, BlockSystemContext* blockCtx, SpriteContext* 
               << spriteCtx->sprites.size() << " sprites.\n";
 }
 
-// ================================================================
-//  LoadProject  —  همه چیز برمیگرده، مثل اسکرچ
-// ================================================================
+
 void LoadProject(SDL_Renderer* renderer, std::string name, BlockSystemContext* blockCtx, SpriteContext* spriteCtx) {
     std::ifstream f(name + ".scr");
     if (!f.is_open()) { std::cerr << "[Load] Cannot open: " << name << ".scr\n"; return; }
@@ -2174,7 +2354,6 @@ void LoadProject(SDL_Renderer* renderer, std::string name, BlockSystemContext* b
         return;
     }
 
-    // ---- پاک کردن state قبلی ----
     // texture های اسپرایت‌ها رو آزاد کن
     for (auto& s : spriteCtx->sprites)
         for (auto& c : s.costumes)
@@ -2191,7 +2370,6 @@ void LoadProject(SDL_Renderer* renderer, std::string name, BlockSystemContext* b
     // palette رو از نو بساز
     InitBlockSystem(blockCtx, 1280, 720);
 
-    // ---- خواندن فایل خط به خط ----
     std::string line;
     std::string section = "";
 
@@ -2404,9 +2582,6 @@ void AddNewSprite(SDL_Renderer *pRenderer, SpriteContext *pContext) {
     // (empty implementation as in original)
 }
 
-// ============================================================
-//  STAGE GUI FUNCTIONS  (StageGUI.h)
-// ============================================================
 
 void DrawLabel(SDL_Renderer* r, TTF_Font* font, std::string text, int x, int y, SDL_Color color) {
     if (text.empty() || font == nullptr) return;
@@ -2453,7 +2628,6 @@ void RenderSpriteProperties(SDL_Renderer* renderer, TTF_Font* font, SpriteContex
     DrawInput("Size", std::to_string((int)(s->scale * 100)), sX, sY + 40, 60);
     DrawInput("Dir", std::to_string((int)s->direction), sX + 120, sY + 40, 60);
 
-    // *** اضافه شدن دکمه‌های زیبای Show و Hide ***
     DrawLabel(renderer, font, "Show", sX + 230, sY + 45, tCol);
     SDL_Rect eyeOn = {sX + 280, sY + 40, 30, 30};
     SDL_Rect eyeOff = {sX + 320, sY + 40, 30, 30};
@@ -2592,7 +2766,6 @@ inline void HandleStageGUIEvents(SDL_Event* e, SpriteContext* ctx, SDL_Renderer*
 
     if (e->type != SDL_MOUSEBUTTONDOWN || e->button.button != SDL_BUTTON_LEFT) return;
 
-    // --- کلیک روی خود استیج برای گرفتن کاراکتر ---
     if (mx > stageX && mx < stageX + stageW && my > stageY && my < stageY + stageH) {
         for (int i = ctx->sprites.size() - 1; i >= 0; i--) {
             Sprite& s = ctx->sprites[i];
@@ -2611,7 +2784,6 @@ inline void HandleStageGUIEvents(SDL_Event* e, SpriteContext* ctx, SDL_Renderer*
         }
     }
 
-    // --- کلیک در پنل مشخصات (Show / Hide) ---
     int propX = 800, propY = 458;
     if (mx >= propX && mx <= propX + 480 && my >= propY && my <= propY + 100) {
         if (ctx->selectedSpriteIndex != -1 && !ctx->sprites.empty()) {
@@ -2668,9 +2840,6 @@ inline void HandleStageGUIEvents(SDL_Event* e, SpriteContext* ctx, SDL_Renderer*
     }
 }
 
-// ============================================================
-//  EXECUTION SYSTEM FUNCTIONS  (ExecutionSystem.h)
-// ============================================================
 
 Block* FindDefineBlock(BlockSystemContext* ctx, std::string name) {
     for (auto& b : ctx->blocks) {
@@ -2678,38 +2847,42 @@ Block* FindDefineBlock(BlockSystemContext* ctx, std::string name) {
     } return nullptr;
 }
 
-// *** جادوی ریاضیات: ارزیاب بازگشتی مقادیر ***
-// این تابع چک می‌کنه که آیا توی ورودی، یک بلاک دیگه (مثل جمع و ضرب) افتاده یا نه؟
-// اگه بلاک بود، اونو حساب می‌کنه، اگه نبود، عددی که تایپ کردی رو می‌خونه!
-// به تابع، کانتکست بلاک‌ها رو هم پاس می‌دیم
+float EvalBlock(Block* b, BlockSystemContext* ctx) {
+    if (!b) return 0;
+    // محاسبه بازگشتی arg1 و arg2
+    float v1 = b->arg1 ? EvalBlock(b->arg1, ctx)
+                       : (b->param1Str.empty() ? 0.0f : [&]{ try{ return std::stof(b->param1Str); } catch(...){ return 0.0f; } }());
+    float v2 = b->arg2 ? EvalBlock(b->arg2, ctx)
+                       : (b->param2Str.empty() ? 0.0f : [&]{ try{ return std::stof(b->param2Str); } catch(...){ return 0.0f; } }());
+
+    switch (b->opCode) {
+        case OP_ADD: return v1 + v2;
+        case OP_SUB: return v1 - v2;
+        case OP_MUL: return v1 * v2;
+        case OP_DIV: return (v2 != 0) ? v1/v2 : 0;
+        case OP_MOD: return (v2 != 0) ? std::fmod(v1,v2) : 0;
+        case OP_GT:  return (v1 > v2)  ? 1 : 0;
+        case OP_LT:  return (v1 < v2)  ? 1 : 0;
+        case OP_EQ:  return (std::fabs(v1-v2)<0.0001f) ? 1 : 0;
+        case OP_AND: return (v1 != 0 && v2 != 0) ? 1 : 0;
+        case OP_OR:  return (v1 != 0 || v2 != 0) ? 1 : 0;
+        case OP_NOT: return (v1 == 0) ? 1 : 0;
+        case OP_VAR_REPORTER:
+            for (auto& v : ctx->variables) if (v.name == b->param1Str) return v.value;
+            return 0;
+        default:
+            // بلاک خودش عدد نداره - مقدار param1Str رو برگردون
+            try { return std::stof(b->param1Str); } catch (...) { return 0; }
+    }
+}
+
+// برای سازگاری با کدهای قدیمی
 float GetBlockValue(Block* b, int paramIndex, BlockSystemContext* ctx) {
     if (!b) return 0;
     Block* argBlock = (paramIndex == 1) ? b->arg1 : b->arg2;
     std::string strVal = (paramIndex == 1) ? b->param1Str : b->param2Str;
-
-    if (argBlock) {
-        // خواندن تو در تو
-        float v1 = GetBlockValue(argBlock, 1, ctx);
-        float v2 = GetBlockValue(argBlock, 2, ctx);
-        switch (argBlock->opCode) {
-            case OP_ADD: return v1 + v2;
-            case OP_SUB: return v1 - v2;
-            case OP_MUL: return v1 * v2;
-            case OP_DIV: return (v2 != 0) ? (v1 / v2) : 0;
-            case OP_GT:  return (v1 > v2) ? 1 : 0;
-            case OP_LT:  return (v1 < v2) ? 1 : 0;
-            case OP_EQ:  return (v1 == v2) ? 1 : 0;
-
-                // *** آپدیت: خواندن مقدار واقعی متغیر ***
-            case OP_VAR_REPORTER: {
-                for (auto& v : ctx->variables) if (v.name == argBlock->param1Str) return v.value;
-                return 0; // اگه پیدا نشد
-            }
-            default: return 0;
-        }
-    } else {
-        try { return std::stof(strVal); } catch (...) { return 0; }
-    }
+    if (argBlock) return EvalBlock(argBlock, ctx);
+    try { return std::stof(strVal); } catch (...) { return 0; }
 }
 
 void RunStepFull(ExecutionContext* exec, SpriteContext* spriteCtx, BlockSystemContext* blockCtx, DebugContext* debugCtx, PenContext* penCtx) {
@@ -2768,6 +2941,10 @@ void RunStepFull(ExecutionContext* exec, SpriteContext* spriteCtx, BlockSystemCo
             debugCtx->blockExecCount++;
         }
 
+        float condVal = b->condition ? EvalBlock(b->condition, blockCtx)
+                                     : (b->arg1    ? EvalBlock(b->arg1,      blockCtx)
+                                                   : val1);
+
         switch (b->opCode) {
             case OP_FLAG_CLICKED: break;
             case OP_MOVE_STEPS: if(debugCtx) debugCtx->lastOpName="Move Steps"; {
@@ -2776,40 +2953,58 @@ void RunStepFull(ExecutionContext* exec, SpriteContext* spriteCtx, BlockSystemCo
             break;
         }
             case OP_TURN_RIGHT: if(debugCtx) debugCtx->lastOpName="Turn Right"; s->direction += val1; break;
-            case OP_TURN_LEFT: if(debugCtx) debugCtx->lastOpName="Turn Left";  s->direction -= val1; break;
-            case OP_GOTO_XY: if(debugCtx) debugCtx->lastOpName="Goto XY";    s->x = val1; s->y = val2; break;
-            case OP_CHANGE_SIZE: s->scale += (val1 / 100.0f); if(s->scale < 0.1f) s->scale = 0.1f; break;
-            case OP_SET_SIZE:    s->scale = (val1 / 100.0f); if(s->scale < 0.1f) s->scale = 0.1f; break;
-            case OP_SHOW: s->isVisible = true; break;
+            case OP_TURN_LEFT:  if(debugCtx) debugCtx->lastOpName="Turn Left";  s->direction -= val1; break;
+            case OP_GOTO_XY:   if(debugCtx) debugCtx->lastOpName="Goto XY";    s->x = val1; s->y = val2; break;
+            case OP_CHANGE_SIZE: s->scale += (val1/100.0f); if(s->scale<0.1f) s->scale=0.1f; break;
+            case OP_SET_SIZE:    s->scale  = (val1/100.0f); if(s->scale<0.1f) s->scale=0.1f; break;
+            case OP_SHOW: s->isVisible = true;  break;
             case OP_HIDE: s->isVisible = false; break;
             case OP_SET_VAR: {
                 bool found = false;
-                for(auto& v : blockCtx->variables) { if(v.name == b->param1Str) { v.value = val2; found = true; break; } }
+                for(auto& v : blockCtx->variables) { if(v.name==b->param1Str){ v.value=val2; found=true; break; } }
                 if(!found) blockCtx->variables.push_back({b->param1Str, val2, true});
                 break;
             }
             case OP_CHANGE_VAR: {
                 bool found = false;
-                for(auto& v : blockCtx->variables) { if(v.name == b->param1Str) { v.value += val2; found = true; break; } }
+                for(auto& v : blockCtx->variables) { if(v.name==b->param1Str){ v.value+=val2; found=true; break; } }
                 if(!found) blockCtx->variables.push_back({b->param1Str, val2, true});
                 break;
             }
-            case OP_SAY: if(debugCtx) debugCtx->lastOpName="Say"; s->currentDialog = b->param1Str; s->isThinking = false; s->dialogEndTime = 0; break;
-            case OP_THINK: if(debugCtx) debugCtx->lastOpName="Think"; s->currentDialog = b->param1Str; s->isThinking = true; s->dialogEndTime = 0; break;
+            case OP_SAY:   if(debugCtx) debugCtx->lastOpName="Say";
+                s->currentDialog=b->param1Str; s->isThinking=false; s->dialogEndTime=0; break;
+            case OP_THINK: if(debugCtx) debugCtx->lastOpName="Think";
+                s->currentDialog=b->param1Str; s->isThinking=true;  s->dialogEndTime=0; break;
 
             case OP_FOREVER: if(debugCtx) debugCtx->lastOpName="Forever"; {
             if (b->subStack) { t.returnStack.push(b); t.currentBlock = b->subStack; continue; }
-            else { t.returnStack.push(b); continue; }
+            else             { t.returnStack.push(b); continue; }
         }
             case OP_IF: if(debugCtx) debugCtx->lastOpName="If"; {
-            if (val1 != 0 && b->subStack) { t.returnStack.push(b->next); t.currentBlock = b->subStack; continue; }
+            // condVal از condition بلاک ارزیابی شده (نه arg1)
+            if (condVal != 0 && b->subStack) { t.returnStack.push(b->next); t.currentBlock = b->subStack; continue; }
             break;
         }
             case OP_IF_ELSE: if(debugCtx) debugCtx->lastOpName="If Else"; {
-            if (val1 != 0 && b->subStack) { t.returnStack.push(b->next); t.currentBlock = b->subStack; continue; }
-            else if (val1 == 0 && b->subStack2) { t.returnStack.push(b->next); t.currentBlock = b->subStack2; continue; }
+            if      (condVal != 0 && b->subStack)  { t.returnStack.push(b->next); t.currentBlock = b->subStack;  continue; }
+            else if (condVal == 0 && b->subStack2) { t.returnStack.push(b->next); t.currentBlock = b->subStack2; continue; }
             break;
         }
+            case OP_WAIT_UNTIL: {
+                if (condVal != 0) break; // شرط برقراره، ادامه بده
+                // شرط برقرار نیست - همین بلاک رو دوباره اجرا کن
+                t.currentBlock = b; continue;
+            }
+            case OP_REPEAT: {
+                if (!t.repeatMap.count(b)) t.repeatMap[b] = (int)val1;
+                if (t.repeatMap[b] > 0) {
+                    t.repeatMap[b]--;
+                    if (b->subStack) { t.returnStack.push(b); t.currentBlock = b->subStack; continue; }
+                } else {
+                    t.repeatMap.erase(b);
+                }
+                break;
+            }
             case OP_STOP_ALL: { exec->threads.clear(); exec->isRunning = false; return; }
                 // *** جادوی توابع: پرش به بدنه تابع و بازگشت به خط فعلی ***
             case OP_CALL_CUSTOM: {
@@ -2826,7 +3021,6 @@ void RunStepFull(ExecutionContext* exec, SpriteContext* spriteCtx, BlockSystemCo
                 break;
             }
 
-                // ---- Pen Extension opcodes ----
             case OP_PEN_DOWN: if(debugCtx) debugCtx->lastOpName="Pen Down";  s->penDown = true;  break;
             case OP_PEN_UP: if(debugCtx) debugCtx->lastOpName="Pen Up";    s->penDown = false; break;
             case OP_PEN_CLEAR: if(debugCtx) debugCtx->lastOpName="Clear"; if(penCtx) penCtx->lines.clear(); break;
@@ -2896,9 +3090,6 @@ void StopProgram(ExecutionContext* exec, DebugContext* debugCtx) {
     if(debugCtx) Log(debugCtx, "Program stopped.", LOG_INFO);
 }
 
-// ============================================================
-//  COSTUME EDITOR FUNCTIONS  (CostumeEditor.h)
-// ============================================================
 
 // تابع کمکی برای قرینه کردن (Flip) تکسچر و جایگزینی آن
 void FlipCostumeTexture(SDL_Renderer* r, Costume& c, SDL_RendererFlip flipType) {
@@ -2933,7 +3124,6 @@ void RenderCostumeEditor(SDL_Renderer* r, SpriteContext* ctx, SDL_Rect area, Pai
 
     Costume& currentCostume = s.costumes[s.currentCostumeIndex];
 
-    // --- تابع محلی برای رسم دکمه‌های متنی ---
     auto DrawBtn = [&](std::string text, SDL_Rect rect, bool isActive, bool isDanger = false) {
         int mx, my; SDL_GetMouseState(&mx, &my);
         bool hover = (mx > rect.x && mx < rect.x + rect.w && my > rect.y && my < rect.y + rect.h);
@@ -2959,7 +3149,6 @@ void RenderCostumeEditor(SDL_Renderer* r, SpriteContext* ctx, SDL_Rect area, Pai
         }
     };
 
-    // ================= ردیف اول: رنگ‌ها و پاک‌کن =================
     int row1Y = area.y + 20;
 
     // پالت رنگ
@@ -2984,7 +3173,6 @@ void RenderCostumeEditor(SDL_Renderer* r, SpriteContext* ctx, SDL_Rect area, Pai
     DrawBtn("Eraser", {area.x + 280, row1Y, 70, 30}, tool->isEraser);
     DrawBtn("Clear All", {area.x + 360, row1Y, 80, 30}, false, true);
 
-    // ================= ردیف دوم: سایز قلم و Flip =================
     int row2Y = area.y + 60;
 
     // سایز قلم‌ها (S=5, M=10, L=20)
@@ -2996,7 +3184,7 @@ void RenderCostumeEditor(SDL_Renderer* r, SpriteContext* ctx, SDL_Rect area, Pai
     DrawBtn("Flip H", {area.x + 200, row2Y, 70, 30}, false);
     DrawBtn("Flip V", {area.x + 280, row2Y, 70, 30}, false);
 
-    // ================= بوم نقاشی =================
+
     SDL_Rect canvas = GetCanvasRect(area);
 
     // رسم الگوی شطرنجی پس‌زمینه (نشان‌دهنده شفافیت)
@@ -3020,7 +3208,7 @@ void RenderCostumeEditor(SDL_Renderer* r, SpriteContext* ctx, SDL_Rect area, Pai
     SDL_SetRenderDrawColor(r, 150, 150, 150, 255);
     SDL_RenderDrawRect(r, &canvas);
 
-    // ================= دکمه آپلود تصویر =================
+
     SDL_Rect uploadBtn = GetUploadBtnRect(area);
     int mx, my; SDL_GetMouseState(&mx, &my);
     bool hoverUp = (mx > uploadBtn.x && mx < uploadBtn.x + uploadBtn.w && my > uploadBtn.y && my < uploadBtn.y + uploadBtn.h);
@@ -3322,9 +3510,6 @@ void HandleImageEditorEvents(SDL_Event* e, SpriteContext* ctx, SDL_Rect area, Pa
     }
 }
 
-// ============================================================
-//  MAIN  (main.cpp)
-// ============================================================
 
 enum AppView { VIEW_CODE, VIEW_COSTUMES , VIEW_BACKDROPS};
 AppView currentView = VIEW_CODE;
@@ -3490,7 +3675,6 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(app.renderer, 255, 255, 255, 255);
         SDL_RenderFillRect(app.renderer, &STAGE_RECT);
 
-        // ================= رندر متغیرهای روی استیج (مانند اسکرچ) =================
         int varY = STAGE_RECT.y + 10;
         for (const auto& v : blockSys.variables) {
             if (v.visible && app.globalFont) {
